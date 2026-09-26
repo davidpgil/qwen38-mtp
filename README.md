@@ -31,7 +31,7 @@ Start with the launch command above, `--spec-draft-n-max 2`. Then sweep n-max 2-
 
 Discovered by contributors in the table across the first three days, detailed in the sections and footnotes below:
 
-1. **The n-max sweet spot is card- and topology-dependent.** 24GB cards peak at n-max 2, bigger or faster cards at 3-4, and switching split mode moves it too, so re-sweep after any config change ([@lingster](https://github.com/lingster), [@Jackwwg83](https://github.com/Jackwwg83)).
+1. **The n-max sweet spot depends on card, topology and workload.** Many 24GB records favor n-max 2, but the paired RTX 3090 JSON/tool-call workload below was still improving at n-max 4. Sweep representative prompts as well as hardware/config changes; the mechanism is not established ([@lingster](https://github.com/lingster), [@Jackwwg83](https://github.com/Jackwwg83)).
 2. **`--spec-draft-p-min` helps starved cards and hurts fast ones.** The ~0.60 confidence gate makes deep drafting nearly free on bandwidth-poor rigs ([@tomertec](https://github.com/tomertec)), and inverts on desktop Blackwell, where three independent RTX 5090s ran fastest ungated. Acceptance is a vanity metric there: gating raised it and lowered throughput ([@taco-devs](https://github.com/taco-devs), [@paulomcg](https://github.com/paulomcg), [@jcr211](https://github.com/jcr211)). Sweep it, don't adopt it.
 3. **The gain scales with generation length where overhead dominates.** Short generations can pay more than they win ([@Spadav](https://github.com/Spadav)); on rigs whose baseline is already bandwidth-bound the full gain shows at 400 tokens and length adds nothing ([@Jackwwg83](https://github.com/Jackwwg83)).
 4. **On multi-GPU boxes, fix the split mode before touching spec flags.** The default `--split-mode layer` serializes decode; `tensor` was +68% on its own on a 5060 Ti pair, and the two levers stack to 3.14x ([@Jackwwg83](https://github.com/Jackwwg83)).
@@ -67,6 +67,7 @@ Ran the A/B on your card? Open a PR and add a row.
 
 | Card | Baseline | With flag | n-max | Acceptance | Contributor |
 |---|---|---|---|---|---|
+| RTX 3090 24GB (JSON/tool-call workload) | 34.0 | 84.4 | 4 | 0.971 | [@liowald](https://github.com/liowald) |
 | RTX 3090 24GB | 31.0 | 41.3 | 2 | 0.78 | [@sudoingX](https://x.com/sudoingX) |
 | RTX 5090 mobile 24GB | 36.7 | 50.9 | 2 | 0.79 | [@sudoingX](https://x.com/sudoingX) |
 | RTX 4090 24GB | 47.7 | 76.3 | 2 | 0.56 | [@Spadav_](https://x.com/Spadav_) |
@@ -144,6 +145,8 @@ Ran the A/B on your card? Open a PR and add a row.
 | 2× RTX 3060 12GB (Q4-XYZ-v2, 131K) | 34.2 | 58.9 | 4 | 0.343-0.882 | [@sss0lace](https://github.com/sss0lace) |
 | RX 7900 XT 20GB (Linux/ROCm, UD-Q4_K_M, 64K) | 30.8 | 54.0 | 2 | 0.53-0.96 (0.80) | [@sbmthakur](https://x.com/sbmthakur) |
 | 2× RTX 5070 Ti 16GB (TP, F16 KV, 32K)\* | 69.7 | 140.5 | 6 | 0.33-0.52 (0.440 aggregate) | [@saltzberg](https://github.com/saltzberg) |
+
+\* RTX 3090 JSON/tool-call workload row (2026-09-26): Unsloth Qwen3.8-27B UD-Q4_K_XL, llama.cpp `41fc7584f`, Linux/CUDA, driver 580.178.04, q4_0 KV, 65,536 configured context, flash attention and CUDA graphs, `--parallel 1` in both arms. Process VRAM after warm JSON decode: 18,150 MiB spec-off → 19,424 MiB depth 4, from a separate same-profile receipt after the timing sweep. Method differs from `probe.py`: raw `/completion`, greedy seed 42, full prefill, 128 output tokens with EOS ignored; ten measured runs per depth after at least 3 s warmup, plus 20 baseline runs bracketing depths 1–4. Same artifact/config, only speculative flags change. The 55-token prompt generates a fixed prefix of a JSON array of tool-shaped calls; output hashes match across depths and control drift is −0.89%. Numbers are decode medians, excluding prefill. One synthetic prompt, not an application-speed or quality claim; depth 4 is the highest tested, not a proven global optimum. Full matrix, acceptance accounting and raw evidence are available from the contributor on request; decode values are medians of per-request rates.
 
 \* A6000 row: unsloth Q8_K_XL, 256K context, q8_0 KV cache — 40.0 GB VRAM baseline, 41.4 GB with spec (rows above: Q4_K_M, 131K, q4_0 KV).
 \* RX 7900 XTX row: unsloth Q4_K_M, 131K context, q4_0 KV cache — 18.9 GB VRAM baseline, 19.7 GB with spec.
