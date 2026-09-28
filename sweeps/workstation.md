@@ -175,7 +175,7 @@ that series; 2.3% and 1.5% on the depth pair.
 
 ### RTX PRO 5000 Blackwell 48GB: n-max and KV sweep
 
-_by [@davidpgil](https://github.com/davidpgil), PR #<N>_
+_by [@davidpgil](https://github.com/davidpgil), PR #90_
 
 Same RTX PRO 5000 Blackwell 48GB host and serving configuration as the
 community row above: unsloth/Qwen3.8-27B-GGUF UD-Q6_K_XL, 262,144 context,
